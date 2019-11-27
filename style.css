@@ -1,0 +1,88 @@
+/* * {
+    overflow: visible;
+    margin: 0;
+    box-sizing: border-box;
+} */
+
+body {
+    margin: 0;
+    text-align: center;
+    background-color: var(--colorSec);
+    /* filter: invert(1); */
+}
+
+main {
+    user-select: none;
+    display: inline-block;
+}
+
+.group {
+    background-color: var(--colorSec);
+    position: relative;
+    width: 200px;
+    height: 200px;
+    float: left;
+    transition: opacity 0.1s ease-in-out;
+
+    overflow: hidden;
+    transition: scale 0.05s ease-in-out;
+}
+
+.focused > .group:not(.focus) {
+    opacity: 0.5;
+}
+
+.focus {
+    outline: 1px solid var(--colorMix);
+    z-index: 4;
+}
+
+.focus > svg {
+    outline: 1px solid var(--colorMix);
+}
+
+.group:hover {
+    outline: 1px solid var(--colorMix);
+    scale: 1.1;
+    z-index: 1;
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+
+}
+
+.group.selected {
+    scale: 1.1;
+    outline: 4px dashed var(--colorMix);
+    z-index: 5;
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+svg {
+    float: left;
+}
+
+.activated polygon {
+    fill: var(--colorMix) !important;
+}
+
+.showGrid .group {
+    outline: 3px solid var(--colorMix);
+}
+
+svg > polygon {
+    transform-origin: center;
+    position: absolute;
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Button Style */
+
+button {
+    border-width: 0;
+    background-color: var(--colorMain);
+    color: var(--colorSec);
+}
+
+button:is(.active, :hover) {
+    background-color: var(--colorSec);
+    color: var(--colorMain);
+}

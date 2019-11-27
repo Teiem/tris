@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>MedGest</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main id="main">
+
+    </main>
+
+    <div id="control">
+        <label for="showGrid">show Grid</label>
+        <input type="checkbox" name="showGrid" id="showGrid" onclick="this.checked ? document.body.classList.add('showGrid') : document.body.classList.remove('showGrid')">
+        <br>
+
+        <button id="copy" name="copy" type="button" onclick="tris.functs.copy()">copy From/To</button>
+        <br>
+
+        <button id="swap" name="swap" type="button">swap with</button>
+        <br>
+
+        <button id="change" name="change" type="button">change All</button>
+        <br>
+
+    </div>
+</body>
+
+</html>
+
+<script src="script.js"></script>
+<script src="util.js"></script>
