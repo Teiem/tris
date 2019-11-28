@@ -17,15 +17,15 @@ main {
 }
 
 .group {
-    background-color: var(--colorSec);
     position: relative;
     width: 200px;
     height: 200px;
     float: left;
     transition: opacity 0.1s ease-in-out;
+    pointer-events: none;
 
     overflow: hidden;
-    transition: scale 0.05s ease-in-out;
+    transition: transform 0.05s ease-in-out;
 }
 
 .focused > .group:not(.focus) {
@@ -41,23 +41,32 @@ main {
     outline: 1px solid var(--colorMix);
 }
 
-.group:hover {
+:not(.focused) > .group:hover:not(.selected) {
     outline: 1px solid var(--colorMix);
-    scale: 1.1;
-    z-index: 1;
-    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
 
+.group.selected:hover {
+    clip-path: inherit !important;
 }
 
 .group.selected {
-    scale: 1.1;
-    outline: 4px dashed var(--colorMix);
+    border: 4px dashed var(--colorMix);
+    margin: -4px;
     z-index: 5;
     box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
 }
 
+:not(.focused) > .group:hover,
+.group.focus:hover {
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+    z-index: 10;
+    transform: scale(1.1);
+}
+
 svg {
     float: left;
+    background-color: var(--colorSec);
+    pointer-events: initial;
 }
 
 .activated polygon {
@@ -82,7 +91,9 @@ button {
     color: var(--colorSec);
 }
 
-button:is(.active, :hover) {
+/* button:is(.active, :hover), */
+button.active,
+button:hover {
     background-color: var(--colorSec);
     color: var(--colorMain);
 }
