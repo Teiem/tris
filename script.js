@@ -1,6 +1,8 @@
-const main = document.getElementById("main");
-
+const settings = {
+    needCtrlKey: false,
+}
 const tris = (() => {
+    const main = document.getElementById("main");
     const state = {
         arr: null,
         selectionArr: null,
@@ -45,7 +47,7 @@ const tris = (() => {
     };
 
     const apply = ([x, y], el, newState) => {
-        state.arr[y][x] = changeState.is;
+        state.arr[y][x] = newState;
         [...el.children].forEach((subEl, i) => {
             subEl.style.willChange = "rotate";
             subEl.firstElementChild.style.transform = `rotate(${newState.findIndex(it => it === i) * 90}deg)`;
@@ -69,33 +71,30 @@ const tris = (() => {
         if (changeState.is.length !== 3) return;
         [0, 1, 2, 3].some(i => !changeState.is.includes(i) && changeState.is.push(i))
 
-
-        apply([x, y], _pEl, changeState.is);
+        selection.selectionIsNotEmpty() ? selection.action.fill(changeState.is) : apply([x, y], _pEl, changeState.is);
         setTimeout(() => unselectTris(_pEl), 200);
     };
 
     /**
-     * 
-     * @param {[number, number]} param0 
+     *
+     * @param {[number, number]} param0
      */
     const get = ([x, y]) => main.children[getIndex([x, y])];
     const getIndex = ([x, y]) => y * state.arr[0].length + x;
     const getXY = index => [index % state.arr[0].length, Math.floor(index / state.arr[0].length)];
     const getXYFromEl = el => [+el.getAttribute("data-x"), +el.getAttribute("data-y")];
 
-    const getTriangle = ([x, y], i, rot) => `    
+    const getTriangle = ([x, y], i, rot) => `
     <svg width="100" height="100" viewBox="0 0 100 100" onmousedown="tris.mouseDownHandler([${x}, ${y}], ${i}, event)">
         <polygon points="0,0 0,100 100,100" style="fill: var(--colorMain); transform: rotate(${rot * 90}deg); pointer-events: none;"/>
     </svg>`;
 
     const generate = () => {
-        applyColor();
-
-        main.innerHTML = state.arr.map((subarr, y) => (subarr.map((el, x) => `
+        main.innerHTML = state.arr.map((subarr, y) => subarr.map((el, x) => `
             <div class="group" data-x="${x}" data-y="${y}" style="${x === 0 ? "clear:left" : ""}">
-                ${el.map((rot, i) => getTriangle([x, y], i, rot)).join("")}
+                ${el.map((_, i) => getTriangle([x, y], i, el.indexOf(i))).join("")}
             </div>
-        `).join(""))).join("");
+        `).join("")).join("");
     };
 
     const create = ({
@@ -109,7 +108,8 @@ const tris = (() => {
 
         if (colorMain) setColorMain(colorMain);
         if (colorSec) setColorSec(colorSec);
-        state.arr = (new Array(h)).fill("").map(_ => (new Array(w).fill(shape)));
+        applyColor();
+        state.arr = (new Array(h)).fill("").map(_ => (new Array(w).fill([...shape])));
         state.selectionArr = (new Array(h)).fill("").map(_ => (new Array(w).fill(false)));
         generate()
     };
@@ -142,11 +142,11 @@ const tris = (() => {
         if (state.drag.curEl === state.drag.lastEl) return;
         state.drag.lastEl = state.drag.curEl;
 
-        const curCoords = getXYFromEl(state.drag.curEl);
+        const curXY = getXYFromEl(state.drag.curEl);
 
         if (state.mouseButton === 2) {
-            const curStart = [Math.min(state.drag.init[0], curCoords[0]), Math.min(state.drag.init[1], curCoords[1])];
-            const curEnd = [Math.max(state.drag.init[0], curCoords[0]), Math.max(state.drag.init[1], curCoords[1])];
+            const curStart = [Math.min(state.drag.init[0], curXY[0]), Math.min(state.drag.init[1], curXY[1])];
+            const curEnd = [Math.max(state.drag.init[0], curXY[0]), Math.max(state.drag.init[1], curXY[1])];
 
             const startCords = [Math.min(curStart[0], state.drag.last.start[0]), Math.min(curStart[1], state.drag.last.start[1])];
             const endCords = [Math.max(curEnd[0], state.drag.last.end[0]), Math.max(curEnd[1], state.drag.last.end[1])];
@@ -158,25 +158,25 @@ const tris = (() => {
                     const isInLast = x >= state.drag.last.start[0] && y >= state.drag.last.start[1] && x <= state.drag.last.end[0] && y <= state.drag.last.end[1];
 
                     if (isInCur && isInLast) continue;
-                    (isInCur && !isInLast) === state.drag.wasSelected ? selectionFuncts.removeFromSelection([x, y], get([x, y])) : selectionFuncts.addToSelection([x, y], get([x, y]))
+                    (isInCur && !isInLast) === state.drag.wasSelected ? selection.removeFromSelection([x, y], get([x, y])) : selection.addToSelection([x, y], get([x, y]))
                 }
             }
 
             state.drag.last.start = curStart;
             state.drag.last.end = curEnd;
 
-        } else if (state.mouseButton === 0) state.drag.wasSelected ? selectionFuncts.removeFromSelection(curCoords, state.drag.curEl) : selectionFuncts.addToSelection(curCoords, state.drag.curEl);
+        } else if (state.mouseButton === 0) state.drag.wasSelected ? selection.removeFromSelection(curXY, state.drag.curEl) : selection.addToSelection(curXY, state.drag.curEl);
 
         if (!state.drag.addedFirst) {
-            state.drag.wasSelected ? selectionFuncts.removeFromSelection(state.drag.init, state.drag.initEl) : selectionFuncts.addToSelection(state.drag.init, state.drag.initEl)
+            state.drag.wasSelected ? selection.removeFromSelection(state.drag.init, state.drag.initEl) : selection.addToSelection(state.drag.init, state.drag.initEl)
             state.drag.addedFirst = true;
         }
     };
 
     /**
      * Initial function for Mouse interaction, gets called from inline onlick event
-     * @param {number} y 
-     * @param {number} x 
+     * @param {number} y
+     * @param {number} x
      * @param {number} i index of all tiles
      * @param {Event} e event
      */
@@ -191,13 +191,13 @@ const tris = (() => {
 
         }
         if (e.ctrlKey || e.button === 1) {
-            return state.selectionArr[y][x] ? selectionFuncts.removeFromSelection([x, y], _el) : selectionFuncts.addToSelection([x, y], _el);
+            return state.selectionArr[y][x] ? selection.removeFromSelection([x, y], _el) : selection.addToSelection([x, y], _el);
 
         }
         if (e.shiftKey) {
-            // need some kind of highligh besides selection 
-            selectionFuncts.addToSelection([x, y], _el);
-            return selectionFuncts.selectOneOnNextClick(toEl => selectionFuncts.callForMultiple([x, y], getXYFromEl(toEl), state.selectionArr[y][x] ? selectionFuncts.removeFromSelection : selectionFuncts.addToSelection));
+            // need some kind of highligh besides selection
+            selection.addToSelection([x, y], _el);
+            return selection.selectOneOnNextClick(toEl => selection.selectFromTo([x, y], getXYFromEl(toEl), state.selectionArr[y][x] ? selection.removeFromSelection : selection.addToSelection));
         }
 
         state.drag.init = [x, y];
@@ -232,21 +232,58 @@ const tris = (() => {
     };
 
     const keyBoardHandler = e => {
-        // console.log("keyDown", e.keyCode, e);
+        if (e.keyCode === 27) {
+            changeState.x === null ?
+                selection.unselect() :
+                unselectTris();
+        } else if (e.ctrlKey || !settings.needCtrlKey) {
+            switch (e.key) {
+                case "a":
+                    selection.select();
+                    e.preventDefault();
+                    break;
 
-        if (e.key === "a" && e.ctrlKey) {
-            selectionFuncts.select()
-            e.preventDefault()
-        } else if (e.keyCode === 27) {
-            selectionFuncts.unselect();
-            unselectTris();
+                case "c":
+                    if (selection.selectionIsNotEmpty()) break;
+                    e.preventDefault();
+                    selection.copyOne();
+                    break;
+
+                case "i":
+                    selection.invert();
+                    break;
+
+                case "r":
+                    e.preventDefault();
+                    selection.selectionIsNotEmpty() ?
+                        selection.callForSelection((xy) => selection.rotate(xy, get(xy))) :
+                        selection.rotateOne();
+                    break
+
+                case "q":
+                    e.preventDefault();
+                    selection.selectionIsNotEmpty() ?
+                        selection.callForSelection((xy) => selection.invertColor(xy, get(xy))) :
+                        selection.invertOneColor();
+                    break
+            }
         }
     };
 
     document.addEventListener("keydown", keyBoardHandler);
     main.addEventListener("contextmenu", e => e.preventDefault());
 
-    const selectionFuncts = (() => {
+    const exportState = () => state.arr;
+    const inport = (arr) => {
+        console.log(arr);
+        
+        state.arr = arr;
+        console.log(state.arr);
+        
+        generate()
+    };
+    
+    const selection = (() => {
 
         const updateBorder = ([x, y]) => {
             get([x, y]).style.clipPath = "inset(" + [
@@ -298,7 +335,7 @@ const tris = (() => {
             })
         };
 
-        const callForMultiple = ([fromX, fromY], [toX, toY], callback) => {
+        const selectFromTo = ([fromX, fromY], [toX, toY], callback) => {
             if (fromX === toX && fromY === toY) return addToSelection([fromX, fromY], get([fromX, fromY]));
 
             const fromIndex = getIndex([fromX, fromY]);
@@ -310,28 +347,50 @@ const tris = (() => {
             }
         };
 
-        const selectOneOnNextClick = callback => {
+        const selectOneOnNextClick = (callback, isFinal) => {
             state.selectCallback = (el, [x, y]) => {
                 addToSelection([x, y], el)
                 callback(el, [x, y]);
+                isFinal && unselect()
             };
         };
 
-        const select = () => state.selectionArr.forEach((subArr, y) => subArr.forEach((el, x) => !state.selectionArr[y][x] && addToSelection([x, y], get([x, y]))));
-        const unselect = () => state.selectionArr.forEach((subArr, y) => subArr.forEach((el, x) => state.selectionArr[y][x] && removeFromSelection([x, y], get([x, y]))));
+        const callForSelection = callback => callForAll((xy, isS) => isS && callback(xy));
+        const callForAll = callback => state.selectionArr.forEach((subArr, y) => subArr.forEach((isS, x) => callback([x, y], isS)))
 
-        const copy = e => selectOneOnNextClick(copyFrom => selectOneOnNextClick(copyTo => [...copyFrom.children].forEach((copyFromSVGs, i) => {
-            [...copyTo.children][i].firstElementChild.style.transform = copyFromSVGs.firstElementChild.style.transform;
-            unselect()
-        })))
+        const unselect = () => callForSelection(([x, y]) => removeFromSelection([x, y], get([x, y])));
+        const select = () => callForAll(([x, y], isS) => isS || addToSelection([x, y], get([x, y])));
+        const invert = () => callForAll(([x, y], isS) => isS ? removeFromSelection([x, y], get([x, y])) : addToSelection([x, y], get([x, y])))
 
-        const _symTopDown = () => { // ???
-            state.arr = state.arr.map(subArr => subArr.reverse());
-            tris.generate(state.arr);
-        };
+        const selectionIsNotEmpty = () => state.selectionArr.some(subArr => subArr.some(el => el))
+
+        const copyOne = e => selectOneOnNextClick(copyFrom => selectOneOnNextClick(copyTo => [...copyFrom.children].forEach((copyFromSVGs, i) => [...copyTo.children][i].firstElementChild.style.transform = copyFromSVGs.firstElementChild.style.transform), true))
+
+        //Todo better looking animations
+        const rotate = ([x, y], el) => apply([x, y], el, (() => {
+            const arr = [];
+            arr[(state.arr[y][x].indexOf(2) + 1) % 4] = 0;
+            arr[(state.arr[y][x].indexOf(0) + 1) % 4] = 1;
+            arr[(state.arr[y][x].indexOf(3) + 1) % 4] = 2;
+            arr[(state.arr[y][x].indexOf(1) + 1) % 4] = 3;
+            return arr;
+        })());
+        const rotateOne = () => selectOneOnNextClick((el, [x, y]) => rotate([x, y], el), true);
+
+        const invertColor = ([x, y], el) => apply([x, y], el, (() => {
+            return [
+                state.arr[y][x][2],
+                state.arr[y][x][3],
+                state.arr[y][x][0],
+                state.arr[y][x][1],
+            ]
+        })());
+
+        const invertOneColor = () => selectOneOnNextClick((el, [x, y]) => invertColor([x, y], el), true);
 
         const action = (() => {
-            const fill = (newFill) => state.selectionArr.forEach((subarr, y) => subarr.forEach((isSelected, x) => isSelected && apply([x, y], get([x, y]), newFill)))
+            // const fill = (newFill) => state.selectionArr.forEach((subarr, y) => subarr.forEach((isS, x) => isS && apply([x, y], get([x, y]), newFill)))
+            const fill = newFill => callForSelection(([x, y]) => apply([x, y], get([x, y]), newFill))
 
             const applyChanges = (arr) => arr.forEach((subArr, y) => subArr.forEach((newArr, x) => {
                 const curArr = state.arr[y][x];
@@ -349,25 +408,30 @@ const tris = (() => {
         return {
             addToSelection,
             removeFromSelection,
-            callForMultiple,
+            selectFromTo,
             selectOneOnNextClick,
             unselect,
             select,
-            copy,
+            invert,
+            callForSelection,
+            selectionIsNotEmpty,
+            copyOne,
+            rotate,
+            rotateOne,
+            invertColor,
+            invertOneColor,
             action,
-            _db: {
-                _symTopDown,
-            }
         };
     })();
 
     return {
         create,
         mouseDownHandler,
-        functs: selectionFuncts,
+        functs: selection,
         db: {
-            get,
-            swapColors
+            swapColors,
+            export: exportState,
+            inport,
         }
     };
 })();
